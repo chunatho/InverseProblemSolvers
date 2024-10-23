@@ -169,7 +169,7 @@ def MEMBryan_solve(A, b, C, mu, alpha_min=1e-3, alpha_max=1e3, Nalpha = 19, cuto
                 S = sum( x - mu - x * log( x / mu ) )   
                 Cinv = inv(C)
                 # eqn 3.20 - A.T@C@A is the 2nd derivative of L w.r.t. A
-                LAMBDA = sqrt(x) *  (A.T @ Cinv @A) * sqrt(x).T #LAMBDA = sqrt(x) *  (A.T@ C @ A) * sqrt(x).T 
+                LAMBDA = sqrt(x) *  (A.T @ A) * sqrt(x).T #LAMBDA = sqrt(x) *  (A.T@ C @ A) * sqrt(x).T 
                 LAMBDA_eigvals, trash = eigh(LAMBDA)
                 term = 0.5*sum( log( alphas[i] / (alphas[i] + LAMBDA_eigvals)) ) 
                 
