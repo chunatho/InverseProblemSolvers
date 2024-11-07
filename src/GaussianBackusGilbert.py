@@ -23,9 +23,9 @@ def GaussianBGM_solve(A, b, C, omegas, taus, sigma=.01, eps=1e-6, lam_input=-1, 
      spacing: 'log' or 'linear' flag to indicate whether you ought to search lambda with linear or logarithmic spacing. 
      delta: tolerance for normalization constraint, i.e., |q.T@R - 1| < delta 
      periodic: flag to specify whether to use analytic formulas or numeric computation
-        case 0, you will compute the formulas numerically
-        case 1, you will use analytic formula for periodic Laplace
-        case -1, you will use analytic formula for non-periodic Laplace
+        case -1, you will compute the formulas numerically (default)
+        case 0, you will use analytic formula for non-periodic Laplace (not well tested)
+        case 1, you will use analytic formula for periodic Laplace (not well tested)
     OUTPUTS
      x: the solution x(omega)
      g_list: list of the basis coefficients at each omega
@@ -46,11 +46,11 @@ def GaussianBGM_solve(A, b, C, omegas, taus, sigma=.01, eps=1e-6, lam_input=-1, 
     T = taus[-1]
     E0 = omegas[0]
     dw = omegas[1]-omegas[0]
-    if(periodic==0):
+    if(periodic==0): # use non-periodic formula
         R = reshape(1./(taus+eps), (Ntau,1))
-    elif(periodic==1):
+    elif(periodic==1): # use periodic formula
         R = reshape(1./(taus+eps) + 1./(T - taus + eps), (Ntau,1))
-    elif(periodic==-1):
+    elif(periodic==-1): # compute numerically
         R = dw*A@ones((Nomega,1), dtype='float64') #Row Sum of Kernel
 
     # ---------------------------------------- #
@@ -64,12 +64,12 @@ def GaussianBGM_solve(A, b, C, omegas, taus, sigma=.01, eps=1e-6, lam_input=-1, 
         W=zeros((Ntau,Ntau))
         for j, t in enumerate(taus ):
             for k, r in enumerate(taus ):
-                if(periodic==0):
+                if(periodic==0): # use non=periodic formula
                     W[j,k] = exp( -(r+t+eps)*E0 )/(r+t+eps)
-                elif(periodic==1):
+                elif(periodic==1): # use periodic formula
                     W[j,k] = exp( -(r+t+eps)*E0 )/(r+t+eps) + exp( -(T-r+t+eps)*E0 )/(T-r+t+eps) \
                                 + exp( -(T+r-t+eps)*E0 )/(T+r-t+eps) + exp( -(2.*T-r-t+eps)*E0 )/(2.*T-r-t+eps)
-                elif(periodic==-1):
+                elif(periodic==-1): # compute numerically
                     for l in range(Nomega):
                         W[j,k]+= dw*A[j,l]*A[k,l]        
 
@@ -79,16 +79,16 @@ def GaussianBGM_solve(A, b, C, omegas, taus, sigma=.01, eps=1e-6, lam_input=-1, 
         smearing_list.append(smearing)
 
         # compute f from eqn ???
-        if(periodic==0):
+        if(periodic==0): # use non=periodic formula
             f=zeros((Ntau,1))
             for j in range( Ntau ):
                 f[j] = Nfxn(taus[j], omegas[i], Z, sigma, eps) * Ffxn(taus[j], omegas[i], omegas[0], sigma, eps)  
-        elif(periodic==1):
+        elif(periodic==1): # use periodic formula
             f=zeros((Ntau,1))
             for j in range( Ntau ):
                 f[j] = Nfxn(taus[j], omegas[i], Z, sigma, eps) * Ffxn(taus[j], omegas[i], omegas[0], sigma, eps) \
                        + Nfxn(taus[-1]-taus[j], omegas[i], Z, sigma, eps) * Ffxn(taus[-1]-taus[j], omegas[i], omegas[0], sigma, eps) 
-        elif(periodic==-1):
+        elif(periodic==-1): # compute numerically
             f = dw*A@reshape(smearing, (-1,1)) # eq 30
             
         if(lam_input < 0):
