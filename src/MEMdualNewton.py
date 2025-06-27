@@ -6,8 +6,8 @@ from numpy import any, logical_and
 from numpy import sum
 from numpy.linalg import svd, eigh, inv
 print('Loading Dual perspective, make sure you have installed')
-print('this package using either >>> pip install DualPerspective')
-print('or >>> pip install --force-reinstall DualPerspective')
+print('this package using either >>> pip install DualPerspective ')
+print('or >>> pip install --force-reinstall DualPerspective ')
 # to install DualPerspective use:
 # >>> pip install DualPerspective
 # if you need to update or reinstall Julia use:
@@ -15,6 +15,7 @@ print('or >>> pip install --force-reinstall DualPerspective')
 from DualPerspective import DPModel, solve, regularize
 #from numba import njit
 
+#@njit
 def MEMdN_solve(A, b, C, mu,  alpha_min=1e0, alpha_max=1e8, Nalpha = 19, posterior_cutoff=0.1, cond_upperbound = -1, rtol=1e-8, atol =1e-8, xatol=1e-8, xrtol=1e-8, numerical_zero=1e-16):
     # This code optimizes ||A@x-b||^2_C + \alpha S_sj using Bryan's algorithm.
     # The details are described in Asakawa et al. https://arxiv.org/abs/hep-lat/0011040
@@ -64,14 +65,13 @@ def MEMdN_solve(A, b, C, mu,  alpha_min=1e0, alpha_max=1e8, Nalpha = 19, posteri
     Cinv = inv(C)
     model = DPModel(A, b[:,0], q=mu[:,0], C=C) #, c=one_vector,λ=None)  # Optionally: DPModel(A, b, q=None, C=None, c=None, λ=None)
 
-    # Declare arrays for storing solutions and Bayesian posterior.
+    # Solve the dual problem at different alphas and store results.
     x = zeros((Nomega,1)); # this list will be converted into an array! x_arr = zeros((Nalpha, Nomega));
     x_arr = zeros((Nalpha, Nomega)); # this list will be converted into an array! x_arr = zeros((Nalpha, Nomega));
     P_arr = zeros((Nalpha, 4)); # this list will be converted into an array! P_arr = zeros((Nalpha, 4));
     accepted_arr= zeros((Nalpha,))
-
-    # Step 1: Solve dual problem solution and estimate Bayesian posterior at each alpha 
     for i in range( Nalpha ):
+        #print('alpha value', alphas[i])
         regularize(model, alphas[i])  # set regularization of optimization problem
         x[:,0] = solve(model)
         if ( np_all(x >= 0.0) and np_all( isfinite(x) ) ):
@@ -128,6 +128,7 @@ def MEMdN_solve(A, b, C, mu,  alpha_min=1e0, alpha_max=1e8, Nalpha = 19, posteri
     xsq_avg /= P_tot
     return x_avg, xsq_avg - x_avg*x_avg, x_arr, P_arr, accepted_arr
 
+
 #@njit(cache=True)
 def np_all(x):
     # Numba compatible version of np.all(x, axis=0)
@@ -143,4 +144,3 @@ def lower_bound(x, eps):
         if ( val < eps):
             x[i] = eps
     return x
-
