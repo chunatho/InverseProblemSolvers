@@ -4,6 +4,7 @@ import src.GaussianBackusGilbert as GBGpy
 import src.ConjugateGradient as CGpy
 import src.SteepestDescent as SDpy
 import src.MEMBryan as MEMBpy
+import src.MEMdualNewton as MEMdNpy
 import src.Tikhonov as TIKpy
 import matplotlib.pyplot as plt
 
@@ -48,6 +49,10 @@ x_BGM, qlist_BGM, obj_list_BGM = BGpy.BGM_solve_test(A, b, C, omegas ) # TO DO: 
 x_GBGM, glist_GBGM, obj_list_GBGM, smearing_list_GBGM = GBGpy.GaussianBGM_solve(A, b, C, omegas, taus, sigma=.1)
 mu = np.ones((Nomega,1))/Nomega
 x_MEMB, x_MEMB_var, MEMB_proposedsolutions, MEMB_P, MEMB_acceptance_arr = MEMBpy.MEMBryan_solve(A, b, C, mu, alpha_min=1e-3, alpha_max=1e4)
+tmp = MEMdNpy.MEMdN_solve(A, b, C, mu,
+                          alpha_min=1e1, alpha_max=1e6, Nalpha=31,
+                          rtol=1e-6, atol =1e-6, xrtol=1e-6, xatol=1e-6)
+x_MEMdN, x_MEMdN_var, MEMdN_proposedsolutions, MEMdN_P, MEMdN_acceptance_arr = tmp
 
 plt.figure()
 plt.plot(data.T)
@@ -62,79 +67,96 @@ plt.plot(x_SD, ls='--', alpha=.5, label='Steepest Descent')
 plt.plot(x_BGM, marker='^', markevery=13, ms=10, label='Backus--Gilbert')
 plt.plot(x_GBGM, marker='o', markevery=21, ms=10, label='Gaussian Bakus--Gilbert')
 plt.plot(x_MEMB, marker='s', markevery=29, ms=10, label='MEM Bryan estimate')
+plt.plot(x_MEMdN, marker='*', markevery=33, ms=10, label='MEM dual N. estimate')
 plt.plot(x, color='black', alpha=.7, label='solution')
 plt.ylim([0.005,0.015])
 plt.legend()
-
+plt.savefig('imgs/gaussianInversion_allEstimates.png', bbox_inches='tight')
 # ---------------------------- #
 #  Backus-Gilbert Diagnostics  #
 # ---------------------------- #
 plt.figure()
-plt.title(r"Backus-Gilbert Smearing Function Bases",  fontsize=16)
+plt.title('Backus-Gilbert Smearing Functions',  fontsize=16)
 step=len(qlist_BGM)//4
-print("len Nomega?", len(qlist_BGM))
 dw = omegas[1] - omegas[0]
 for index, q, c in zip( range(0,Nomega,step), qlist_BGM[::step], ['r','b','g','c'] ):
-    plt.plot( omegas, (q.T@A)[0], c=c, marker='x', markevery=33, label="$\omega$=%.2f"%omegas[index])
-plt.xlabel("$\omega$")
+    plt.plot( omegas, (q.T@A)[0], c=c, marker='x', markevery=33, label=r'$\omega$=%.2f'%omegas[index])
+plt.xlabel(r'$\omega$')
 plt.legend(fontsize=14)
+plt.savefig('imgs/gaussianInversion_BG_smearingFxns.png', bbox_inches='tight')
 
 plt.figure()
-plt.title(r"Backus-Gilbert Objective Function",  fontsize=16)
+plt.title(r'Backus-Gilbert Objective Function',  fontsize=16)
 lams = 10**np.linspace(np.log10(1e-3), np.log10(.999), 100)
 for index, objfxn in enumerate(obj_list_BGM):
     if(index % step==0):
-        plt.plot(lams, objfxn, label='$\omega$=%.2f'%omegas[index])
+        plt.plot(lams, objfxn, label=r'$\omega$=%.2f'%omegas[index])
         plt.scatter(lams[np.argmax(objfxn)], np.max(objfxn))
 plt.legend()
 plt.xlabel('regularization param $\lambda$')
+plt.savefig('imgs/gaussianInversion_BG_objFxns.png', bbox_inches='tight')
 
 
 plt.figure()
-plt.title(r"Gaussian Backus-Gilbert Smearing Function $\sigma=0.20$",  fontsize=16)
+plt.title(r'Gaussian Backus-Gilbert Smearing Function $\sigma=0.20$',  fontsize=16)
 step=len(glist_GBGM)//5
 dw = omegas[1] - omegas[0]
 for smear, g, c in zip(smearing_list_GBGM[::step], glist_GBGM[::step], ['r','b','g','c'] ):
     print(dw*np.sum(smear), dw*np.sum( (g.T@A)[0] ))
-    plt.plot( omegas, smear, c=c, ls='--', markevery=55, label='target Gaussian $\omega$=%.2f'%omegas[index])
-    plt.plot( omegas, (g.T@A)[0], c=c, markevery=33, label="$\omega$=%.2f"%omegas[index])
+    plt.plot( omegas, smear, c=c, ls='--', markevery=55, label=r'target Gaussian $\omega$=%.2f'%omegas[index])
+    plt.plot( omegas, (g.T@A)[0], c=c, markevery=33, label=r'$\omega$=%.2f'%omegas[index])
 plt.legend(fontsize=10)
-plt.xlabel("$\omega$")
+plt.xlabel(r'$\omega$')
+plt.savefig('imgs/gaussianInversion_GBG_smearingFxns.png', bbox_inches='tight')
 
 plt.figure()
-plt.title(r"Gaussian Backus-Gilbert Objective Function",  fontsize=16)
+plt.title('Gaussian Backus-Gilbert Objective Function',  fontsize=16)
 for index, objfxn in enumerate(obj_list_GBGM):
     if(index % step==0):
-        plt.plot(lams, objfxn, label='$\omega$=%.2f'%omegas[index])
+        plt.plot(lams, objfxn, label=r'$\omega$=%.2f'%omegas[index])
         plt.scatter(lams[np.argmax(objfxn)], np.max(objfxn))
 plt.xlabel('regularization param $\lambda$')
+plt.savefig('imgs/gaussianInversion_GBG_objFxns.png', bbox_inches='tight')
 
 
-# -------------------------------- #
-#  MEM with Bryan Alg Diagnostics  #
-# -------------------------------- #
-print(MEMB_P)
+# ----------------- #
+#  MEM Diagnostics  #
+# ----------------- #
+# 1) proposed solutions
+print('Bryan Posterior', MEMB_P)
+print('dual Newton posterior', MEMdN_P)
 
 plt.figure()
 plt.plot(x, color='black', alpha=.7,  marker='o', markevery=17, label='solution')
 for index, x in enumerate(MEMB_proposedsolutions):
     if( MEMB_acceptance_arr[index] ):
-        plt.plot(x, alpha=.7, c='cyan', label="%.2e"%MEMB_P[index,0])
+        plt.plot(x, alpha=0.7, c='cyan', label='%.2e'%MEMB_P[index,0])
     else:
-        plt.plot(x, alpha=.1, c='black', label="%.2e"%MEMB_P[index,0])
+        plt.plot(x, alpha=0.1, c='black', label='%.2e'%MEMB_P[index,0])
 #plt.plot(x_MEMB, marker='s', markevery=29, ms=10, label='MEM Bryan estimate')
 plt.ylim([0.005,0.015])
 plt.legend(fontsize=7)
+plt.savefig('imgs/gaussianInversion_MEMB_proposedSols.png', bbox_inches='tight')
 
-# -------------------------------- #
-#  MEM with Bryan Alg Diagnostics  #
-# -------------------------------- #
+plt.figure()
+plt.plot(x, color='black', alpha=.7,  marker='o', markevery=17, label='solution')
+for index, x in enumerate(MEMdN_proposedsolutions):
+    if( MEMdN_acceptance_arr[index] ):
+        plt.plot(x, alpha=0.7, c='cyan', label='%.2e'%MEMdN_P[index,0])
+    else:
+        plt.plot(x, alpha=0.1, c='black', label='%.2e'%MEMdN_P[index,0])
+#plt.plot(x_MEMB, marker='s', markevery=29, ms=10, label='MEM Bryan estimate')
+plt.ylim([0.005,0.015])
+plt.legend(fontsize=7)
+plt.savefig('imgs/gaussianInversion_MEMdN_proposedSols.png', bbox_inches='tight')
+
+# 2) Posterior plots
 plt.figure()
 for P, label, color, marker in zip([MEMB_P],
-                           [r"Bryan $P(\alpha| b, \mu )$"],
+                           [r'Bryan $P(\alpha| b, \mu )$'],
                            ['blue'],
                            ['s']):
-    prob = np.exp(np.sum(P[:,1:], axis=1) ) #/P_dMEM[start:,0]
+    prob = np.exp(np.sum(P[:,1:], axis=1) ) #/P_MEMdN[start:,0]
     plt.plot(P[:,0], prob / np.sum(prob), label=label, color=color, marker=marker, ms=5)
 
 for P, acceptance_arr, color in zip([MEMB_P],[MEMB_acceptance_arr],['blue']):
@@ -150,7 +172,8 @@ for P, acceptance_arr, color in zip([MEMB_P],[MEMB_acceptance_arr],['blue']):
     plt.axvspan(P[start,0], P[end,0], color=color, alpha=.15)
 
 plt.legend(fontsize=14)
-plt.title("Solution weight via Bayesian posterier", fontsize=16)
+plt.title('Solution weight via Bayesian posterier', fontsize=16)
 plt.tick_params(axis='both', labelsize=16)
-plt.xlabel(r"$\alpha$", fontsize=16)
+plt.xlabel(r'$\alpha$', fontsize=16)
 plt.xscale('log')
+plt.savefig('imgs/gaussianInversion_MEM_posteriorWeighting.png', bbox_inches='tight')
