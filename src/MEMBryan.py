@@ -147,21 +147,24 @@ def Bryans_alg(A, b, C, mu, alpha, cond_upperbound,  max_iter, max_fail):
     # let svd produce A = V@diag(S)@Uh, thus we have to transpose Vh to get V 
     # A=V@S@U.T disagrees with the typical A=U@S@V.T, but it is 
     # how Asakawa writes it (see the text below eqn 3.30).
-    V,S,Uh = svd(Arot); U=Uh.T 
+    V0,S,Uh = svd(Arot); U0=Uh.T
     # pre-condition the inversion to a set condition number
     if (cond_upperbound < 0.0):
         r=Ntau;
     else:
-        print("Pre-conditioning A in the primal alg so that kappa<",cond_upperbound)
+        #print('Pre-conditioning A in the primal alg so that kappa<',cond_upperbound)
         for i in range(Ntau):
-            if cond_upperbound > S[0]/S[i] :
+            if S[0]/S[i] < cond_upperbound :
                 r=i+1
-    V=V[:,0:r]; U=U[:,0:r]; S = diag(S[0:r])
-    #DDL = eigvals_inv_matrix 
+            else:
+                break
+    # use copy to make sure arrays are c ordered for numba
+    V=copy(V0[:,:r:1]); U=copy(U0[:,:r:1]); S = diag(S[:r:1])
+
     # Precompute the M for computational savings (eqn 3.37)
     M = S @ V.T @ (eigvals_inv_matrix) @ V @ S
 
-    y = ones((r,1), dtype='float64')
+    y = zeros((r,1), dtype='float64') # start optimization at default model
     err_list=[ chi_sq(Arot, brot, eigvals_inv_matrix, mu, U, y) ];
     
     #initialize algorithm constants
@@ -175,7 +178,7 @@ def Bryans_alg(A, b, C, mu, alpha, cond_upperbound,  max_iter, max_fail):
         # Compute RHS of eqn 3.36, where b has been relabeled `y' #
         # ------------------------------------------------------- #
         x = mu*exp(U @ y) # eqn (3.29) x = m * exp(a) & eqn (3.33) a = Uy 
-        DL = eigvals_inv_matrix @ ( Arot @ x - brot ) # derivative of Likelihood (L) w.r.t. A@x
+        DL = eigvals_inv_matrix @ ( Arot @ x - brot ) # derivative of Likelihood (L) w.r.t. Arot@x
         g = S @ V.T @ DL # compute g from 3.34 
         RHS = -alpha * y - g # compute the RHS of eqn 3.36
 
