@@ -1,0 +1,2 @@
+We place a useless .txt file here so that the imgs folder exists. 
+And when you run these cripts you save to it.
