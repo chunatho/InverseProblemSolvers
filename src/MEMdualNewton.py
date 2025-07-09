@@ -5,17 +5,17 @@ from numpy import isfinite, inf
 from numpy import any, logical_and
 from numpy import sum
 from numpy.linalg import svd, eigh, inv
-print('Loading Dual perspective, make sure you have installed')
-print('this package using either >>> pip install DualPerspective ')
-print('or >>> pip install --force-reinstall DualPerspective ')
 # to install DualPerspective use:
 # >>> pip install DualPerspective
 # if you need to update or reinstall Julia use:
 # >>> pip install --force-reinstall DualPerspective
+print('Loading Dual perspective, make sure you have installed')
+print('this package using either >>> pip install DualPerspective ')
+print('or >>> pip install --force-reinstall DualPerspective ')
+#from juliacall import Main as jl
+#jl.seval("using Pkg; Pkg.instantiate()")
 from DualPerspective import DPModel, solve, regularize
-#from numba import njit
 
-#@njit
 def MEMdN_solve(A, b, C, mu,  alpha_min=1e0, alpha_max=1e8, Nalpha = 19, posterior_cutoff=0.1, cond_upperbound = -1, rtol=1e-8, atol =1e-8, xatol=1e-8, xrtol=1e-8, numerical_zero=1e-16):
     # This code optimizes ||A@x-b||^2_C + \alpha S_sj using Bryan's algorithm.
     # The details are described in Asakawa et al. https://arxiv.org/abs/hep-lat/0011040

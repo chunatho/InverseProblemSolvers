@@ -7,7 +7,7 @@ from math import erf
 
 @njit # just in time compile to speed up program
 def GaussianBGM_solve(A, b, C, omegas, taus, sigma=.01, eps=1e-6, lam_input=-1, Nlam=100, spacing='log', delta=1e-8, periodic=-1):
-    """ 
+    """
     This methods solves the problem Ax=b using the Gaussian Backus-Gilbert Method (BGM) 
     The Gaussian BGM is laid out in Hansen et al. https://doi.org/10.1103/PhysRevD.99.094508
     INPUTS
@@ -33,15 +33,15 @@ def GaussianBGM_solve(A, b, C, omegas, taus, sigma=.01, eps=1e-6, lam_input=-1, 
      smearing_list: list of the specified smearing functions
     """
     # Check the dimension of inputs
-    [Ntau,Nomega] = shape(A) 
+    [Ntau,Nomega] = shape(A)
     b = reshape( b,(-1,1) )
     [dim1, dim2] = shape(b) # Ntau rows and 1 cols
     if( dim1 != Ntau or dim2 != 1):
-        print("ERROR: b needs to be a vector of dimension (Ntau,1)")    
+        print("ERROR: b needs to be a vector of dimension (Ntau,1)")
     [dim1, dim2] = shape(C) # Ntau rows and Ntau cols
     if( dim1 != Ntau or dim2 != Ntau):
         print("ERROR: C needs to be a covariance matrix of dimension (Ntau, Ntau)")
-    
+
     x=zeros((Nomega,))
     T = taus[-1]
     E0 = omegas[0]
@@ -71,7 +71,7 @@ def GaussianBGM_solve(A, b, C, omegas, taus, sigma=.01, eps=1e-6, lam_input=-1, 
                                 + exp( -(T+r-t+eps)*E0 )/(T+r-t+eps) + exp( -(2.*T-r-t+eps)*E0 )/(2.*T-r-t+eps)
                 elif(periodic==-1): # compute numerically
                     for l in range(Nomega):
-                        W[j,k]+= dw*A[j,l]*A[k,l]        
+                        W[j,k]+= dw*A[j,l]*A[k,l]
 
         # Compute the normalized Gaussians to be used as smearing function
         Z = 1./2. * ( 1. + erf(omegas[i] / (sqrt(2.)*sigma)) ) # eq A2

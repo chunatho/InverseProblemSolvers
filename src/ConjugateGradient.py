@@ -1,6 +1,6 @@
 from numba import njit
 from numpy import fmax
-from numpy import shape, reshape, ones, diag
+from numpy import shape, reshape, ones, diag, copy
 from numpy.linalg import norm, svd, inv
 
 @njit
@@ -26,26 +26,26 @@ def CG_solve( A, b, C, tol=1e-8, cond_upperbound = -1):
     b = reshape( b,(-1,1) )
     [dim1, dim2] = shape(b) # Ntau rows and 1 cols
     if( dim1 != Ntau or dim2 != 1):
-        print("ERROR: b needs to be a vector of dimension (Ntau,1)")    
+        print('ERROR: b needs to be a vector of dimension (Ntau,1)')
     [dim1, dim2] = shape(C) # Ntau rows and Ntau cols
     if( dim1 != Ntau or dim2 != Ntau):
-        print("ERROR: C needs to be a covariance matrix of dimension (Ntau, Ntau)")
+        print('ERROR: C needs to be a covariance matrix of dimension (Ntau, Ntau)')
     max_iter=fmax(Ntau,Nomega);
 
     # pre-condition the inversion to a set condition number #
     if(cond_upperbound > 0):
         print("Pre-conditioning matrix to cond(A)=", cond_upperbound)
-        U,S,Vh = svd(A); V=Vh.T 
+        U,S,Vh = svd(A); V=Vh.T
         for i in range(Ntau):
             if cond_upperbound > S[0]/S[i] :
                 rank=i+1
-        A = U[:,0:rank] @ diag(S[0:rank]) @ V[:,0:rank].T 
+        A = copy(U[:,0:rank:1] @ diag(S[0:rank:1]) @ V[:,0:rank:1].T)
 
     #Pre-compute matrices for computational savings
     Cinv = inv(C)
     tmp0 = A.T @ Cinv @ A
     tmp1 = A.T @ Cinv @ b
-    
+
     # initial guess for solution is all ones
     x = ones((Nomega,1))
     r = tmp1 - tmp0 @ x
@@ -65,8 +65,8 @@ def CG_solve( A, b, C, tol=1e-8, cond_upperbound = -1):
 
     chi_sq = (A@x-b).T @ Cinv @ (A@x-b)
     if ( chi_sq < tol):
-        print("CG converged iteration: ",i ,  chi_sq )
+        print('CG converged iteration: ',i ,  chi_sq )
     else:
-        print("CG failed to converge, ended with ||Ax-b||^2_C=", chi_sq )
-        
+        print('CG failed to converge, ended with ||Ax-b||^2_C=', chi_sq )
+
     return x, err_list

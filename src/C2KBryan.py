@@ -1,23 +1,23 @@
 from numba import njit
 from numpy import shape, reshape, array, diag
-from numpy import linspace, geomspace, zeros, zeros_like, ones, eye, copy
+from numpy import linspace, zeros, eye, copy
 from numpy import sqrt, exp, abs, log10, log, argmax, fmin
-from numpy import isnan, nan, nan_to_num, isfinite, inf, bool8, float64
+from numpy import isnan, nan, isfinite, inf
 from numpy import any, logical_and
-from numpy import sum
+from numpy import sum, average, std
 from numpy.linalg import svd, eigh, inv, solve
 #from scipy.linalg import lu_factor, lu_solve
 from scipy.optimize import curve_fit
 
 def C2KBryan_solve(A, b, C, mu, \
                    alpha_min=1e-3, alpha_max=1e3, Nalpha = 19, \
-                   chi2kink_parameter=2.0, cond_upperbound = 1e10, \
+                   NC2K=10, cond_upperbound = 1e10, \
                    max_iter=1000, max_fail=2000, numerical_zero=1e-16):
     # This code optimizes ||A@x -b||^2_C + \alpha S_sj,
     #  for Nalpha points in the interval [alpha_min, alpha_max] using Bryan's algorithm.
     # Bryan, R.K. "Maximum entropy analysis of oversampled data problems"
     # Eur. Biophys. J. 1990, 18, 165-174, doi:10.1007/BF02427376.
-    # Then this program uses the chi2kin algorithm to select a single best alpha value
+    # Then averages over N_C2K alpha values corresponding to C2K parameter (2, 2.5)
     # and returns the solution at that alpha value.
     # Kaufmann, J., and Karsten H.. "ana_cont: Python package for analytic continuation."
     # Computer Physics Communications 282 (2023): 108519. doi:10.1016/j.cpc.2022.108519
@@ -44,34 +44,39 @@ def C2KBryan_solve(A, b, C, mu, \
     #    accepted_arr: array with 0s and 1s indicating whether a particular alpha was included in the averaging.
 
     # Check the dimension of inputs
-    [Ntau, wcut_index] = shape(A) # Ntau rows and (wcut_index < Nomega) cols
+    [Ntau, Nomega] = shape(A) # Ntau rows and Nomega cols
     b = reshape(b, (Ntau, 1)) # make sure that data b is the right shape
-    mu = reshape(mu, (wcut_index, 1)) # make sure that Bayesian prior is the right shape.
+    mu = reshape(mu, (Nomega, 1)) # make sure that Bayesian prior is the right shape.
     Cinv = inv(C) # precompute the inverse of the covariance matrix for computational savings.
 
-    x_arr = zeros((Nalpha, wcut_index)); # store the cost function min (i.e. x_alpha) for each alpha;
-    chi2_arr = zeros((Nalpha, )); # store the cost function min (i.e. x_alpha) for each alpha;
+    x_arr = zeros((Nalpha, Nomega)); # store the cost function min (i.e. x_alpha) for each alpha;
     alphas = 10**linspace(log10(alpha_min), log10(alpha_max), Nalpha)
+    chi2_arr = zeros((Nalpha, 2 )); # store the cost function min (i.e. x_alpha) for each alpha;
+    chi2_arr[:,0] = alphas
     for i in range( Nalpha ):
         x = Bryans_alg(A, b, C, mu, alphas[i], cond_upperbound, max_iter, max_fail)
         if ( np_all(x >= 0.0) and np_all( isfinite(x) ) ):
             #store results
-            chi2_arr[i] = ( ( A@x - b ).T @ Cinv @ ( A@x - b ) )[0,0] # eqn 3.6
-            x_arr[i] = x.flatten()
+            chi2_arr[i,1] = ( ( A@x - b ).T @ Cinv @ ( A@x - b ) )[0,0] # eqn 3.6
         else:
             if ( not np_all(isfinite(x)) ):
                 print('Invalid Solution for alpha ', alphas[i], ' there are NaNs or infs')
             if ( not np_all(x >= 0.0) ):
                 print('Invalid solution for alpha ', alphas[i], ' there are negatives')
-            chi2_arr[i] = inf
-    print('chi2_arr', log10(chi2_arr))
+            chi2_arr[i,1] = inf
+
     # step 2: compute solution using weighted average over alpha
-    params, error = fit_logistic( log10(alphas), log10(chi2_arr) )
+    params, error = fit_logistic( log10(chi2_arr[:,0]), log10(chi2_arr[:,1]) )
     [_, _, c, d] = params
-    alpha_best = 10**(c - chi2kink_parameter/d)
-    print('params', params, 'alpha best', alpha_best)
-    x = Bryans_alg(A, b, C, mu, alpha_best, cond_upperbound, max_iter, max_fail)
-    return x, x_arr, chi2_arr, params, error
+
+    x_arr = zeros((Nomega, NC2K))
+    best_alphas = 10**(c - linspace(2, 2.5, NC2K)/d)
+    for i, alpha_best in enumerate(best_alphas):
+        #print('params', params, 'alpha best', alpha_best)
+        x = Bryans_alg(A, b, C, mu, alpha_best, cond_upperbound, max_iter, max_fail)
+        x_arr[:,i] = x.flatten()
+
+    return average(x_arr, axis=1), std(x_arr, axis=1), x_arr, chi2_arr, best_alphas
 
 # Define the logistic function
 @njit
@@ -120,9 +125,9 @@ def Bryans_alg(A, b, C, mu, alpha, cond_upperbound,  max_iter, max_fail):
     # Rotate into diagonal covariance space (eqn 3.39)
     Arot = copy(R.T @ A)
     brot = copy(R.T @ reshape(b, (Ntau,1)) )
-    
-    # let svd produce A = V@diag(S)@Uh, thus we have to transpose Vh to get V 
-    # A=V@S@U.T disagrees with the typical A=U@S@V.T, but it is 
+
+    # let svd produce A = V@diag(S)@Uh, thus we have to transpose Vh to get V
+    # A=V@S@U.T disagrees with the typical A=U@S@V.T, but it is
     # how Asakawa writes it (see the text below eqn 3.30).
     V0,S,Uh = svd(Arot); U0=Uh.T
     # pre-condition the inversion to a set condition number
@@ -143,20 +148,20 @@ def Bryans_alg(A, b, C, mu, alpha, cond_upperbound,  max_iter, max_fail):
 
     y = zeros((r,1), dtype='float64') # start optimization at default model
     err_list=[ chi_sq(Arot, brot, eigvals_inv_matrix, mu, U, y) ];
-    
+
     #initialize algorithm constants
-    up=2.; c0=.1; i=0;
+    up=2.; c0=0.1; i=0;
     while (i < max_iter):
         i+=1 # this index keeps track of the number of update iteration
         lam=1e-3; # this is the Levenberg-Marquardt (LM) parameter, it's like a learning rate.
         fail=0; # this index tracks the # of adjustments made to the LM parameter this iteration
-        
+
         # ------------------------------------------------------- #
         # Compute RHS of eqn 3.36, where b has been relabeled `y' #
         # ------------------------------------------------------- #
-        x = mu*exp(U @ y) # eqn (3.29) x = m * exp(a) & eqn (3.33) a = Uy 
+        x = mu*exp(U @ y) # eqn (3.29) x = m * exp(a) & eqn (3.33) a = Uy
         DL = eigvals_inv_matrix @ ( Arot @ x - brot ) # derivative of Likelihood (L) w.r.t. Arot@x
-        g = S @ V.T @ DL # compute g from 3.34 
+        g = S @ V.T @ DL # compute g from 3.34
         RHS = -alpha * y - g # compute the RHS of eqn 3.36
 
         # -------------------------------------------------------------- #
@@ -164,7 +169,7 @@ def Bryans_alg(A, b, C, mu, alpha, cond_upperbound,  max_iter, max_fail):
         # until an acceptable update is found of max_fail is reached.    #
         # -------------------------------------------------------------- #
         T = U.T @ diag(x.flatten()) @ U # pre-compute T from eqn 3.37
-        while ( fail < max_fail ): 
+        while ( fail < max_fail ):
             LHS = (alpha + lam) * eye(r) + M @ T # compute the LHS of eqn 3.36
             delta = solve(LHS,RHS) # leave it up to numpy on how to solve it
             new_y = y + delta
@@ -177,18 +182,18 @@ def Bryans_alg(A, b, C, mu, alpha, cond_upperbound,  max_iter, max_fail):
             else: # successful update - reset Lev. Marq. parameter
                 lam=1e-3
                 break
-                
+
         # check if fail limit has been reached
-        if (fail == max_fail): 
+        if (fail == max_fail):
             print("reached max fail")
             break
         #update and check for convergence
-        else:  
+        else:
             err_list.append(err);
             y=new_y;
             if ( abs(err_list[-2] - err) / err < 1e-5 ):
                 break
-    
+
     x = mu*exp(U @ y); # eqn (3.29) x = m * exp(a) & eqn (3.33) a = Uy
     return x
 

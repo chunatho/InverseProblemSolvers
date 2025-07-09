@@ -1,3 +1,10 @@
 If you use this library please cite
 https://arxiv.org/abs/2501.01869
 which is under review at J. Physics: A
+
+To run this code, 
+1) download it
+2a) ./setup_venv.sh
+(if you are on a cluster)
+2b) srun --time 00:30:00 --pty bash -l -i
+3) ./run_all_inversions.sh
