@@ -113,7 +113,7 @@ plt.savefig('imgs/gaussianInversion_BG_objFxns.pdf', bbox_inches='tight', format
 
 
 plt.figure()
-plt.title(r'Gaussian Backus-Gilbert Smearing Function $\sigma=0.20$',  fontsize=16)
+plt.title(r'Gaussian Backus-Gilbert Smearing Functions $\sigma=0.10$',  fontsize=16)
 step=len(glist_GBGM)//5
 dw = omegas[1] - omegas[0]
 for smear, g, c in zip(smearing_list_GBGM[::step], glist_GBGM[::step], ['r','b','g','c'] ):
