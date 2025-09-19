@@ -50,7 +50,6 @@ b_clean = A@x
 # No default model
 x_CG, err_list = CGpy.CG_solve(A, b, C, tol=1e-6, cond_upperbound=1e11)
 x_SD, err_list = SDpy.SD_solve(A, b, C, tol=1e-1, cond_upperbound=1e11)
-# TO DO: Implement Smoothened BGM to set lam parameter
 x_BGM, qlist_BGM, obj_list_BGM = BGpy.BGM_solve_test(A, b, C, omegas )
 x_GBGM, glist_GBGM, obj_list_GBGM, smearing_list_GBGM = GBGpy.GaussianBGM_solve(A, b, C, omegas, taus, sigma=0.1)
 
