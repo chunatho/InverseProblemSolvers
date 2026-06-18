@@ -1,6 +1,57 @@
-@article{chuna2025dual,
+For all dual Newton approaches!
+@article{chuna_JPA_2025,
   title={Dual formulation of the maximum entropy method applied to analytic continuation of quantum Monte Carlo data},
   author={Chuna, Thomas and Barnfield, Nicholas and Dornheim, Tobias and Friedlander, Michael P and Hoheisel, Tim},
-  journal={arXiv preprint arXiv:2501.01869},
-  year={2025}
+  journal={Journal of Physics A: Mathematical and Theoretical},
+  volume={58},
+  number={33},
+  pages={335203},
+  year={2025},
+  doi={10.1088/1751-8121/adf924}
+}
+
+@misc{barnfield_arXiv_2026,
+      title={A Scale-Shape Dual Newton Method for Entropic Least Squares}, 
+      author={Nicholas Barnfield and James V. Burke and Michael P. Friedlander and Tim Hoheisel},
+      year={2026},
+      eprint={2604.27154},
+      archivePrefix={arXiv},
+      primaryClass={math.OC},
+      doi={10.48550/arXiv.2604.27154},
+      url={https://arxiv.org/abs/2604.27154}
+}
+
+For the Regularized Stochastic Optimization Method
+@misc{chuna2026discovering,
+      title={Discovering a well-conditioned analytic continuation problem via dictionary learning}, 
+      author={Thomas Chuna and Phil-Alexander Hofmann and Alexander Benedix-Robles and Tobias Dornheim},
+      year={2026},
+      eprint={2606.19205},
+      archivePrefix={arXiv},
+      primaryClass={physics},
+      url={https://arxiv.org/abs/2606.19205}
+}
+
+For the Backus-Gilbert Method
+@book{press_NumericalRecipes_2007,
+  title={Numerical recipes 3rd edition: The art of scientific computing},
+  author={Press, William H},
+  year={2007},
+  publisher={Cambridge university press}
+}
+
+For the Gaussian Backus-Gilbert method
+@article{Hansen_PRB-GBG_2019,
+  title = {Extraction of spectral densities from lattice correlators},
+  author = {Hansen, Martin and Lupo, Alessandro and Tantalo, Nazario},
+  journal = {Phys. Rev. D},
+  volume = {99},
+  issue = {9},
+  pages = {094508},
+  numpages = {15},
+  year = {2019},
+  month = {May},
+  publisher = {American Physical Society},
+  doi = {10.1103/PhysRevD.99.094508},
+  url = {https://link.aps.org/doi/10.1103/PhysRevD.99.094508}
 }
