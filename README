@@ -1,10 +1,32 @@
-If you use this library please cite
-Journal of Physics A: Mathematical and Theoretical 58 (33), 335203
+This library contains many methods implemented from different publications, and not all publication are mine. 
+Depending on the method from "src/" that you use, you will need to cite a different paper.
+
+For Bryan method
+DOI: 10.1007/BF02427376
+DOI: 10.1016/S0146-6410(01)00150-8
+
+For dual Newton method
 DOI: 10.1088/1751-8121/adf924
+DOI: 10.48550/arXiv.2604.27154
+
+For the regularized stochastic optimization method (RSOM)
+DOI: 10.48550/arXiv.2606.19205
+
+for the stochastic analytic continuation with parallel tempering (SACPT)
+DOI: 10.48550/arXiv.cond-mat/0403055
+
+For the Backus-Gilbert method
+DOI: 10.5555/1403886
+
+For the Gaussian Backus-gilbert Method
+DOI: 10.1103/PhysRevD.99.094508
 
 To run this code, 
 1) download it
 2a) ./setup_venv.sh
 (if you are on a cluster)
-2b) srun --time 00:30:00 --pty bash -l -i
+2b) srun --time 20:00:00 --pty bash -l -i
 3) ./run_all_inversions.sh
+
+If you need things to go fast, comment out the RSOM calls.
+If you need things to go REALLY fast, then also comment out the dual Newton calls.
