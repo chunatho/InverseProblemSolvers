@@ -5,7 +5,7 @@ from numpy import log10, abs
 from numpy import shape, reshape, linspace, zeros, ones, sum
 
 @njit # just in time compile to speed up program
-def BGM_solve_test(A, b, C, omegas, lam_input=-1, Nlam=100, spacing='log', delta=1e-8):
+def BGM_solve(A, b, C, omegas, lam_input=-1, Nlam=100, spacing='log', delta=1e-8):
 
     # This methods solves the problem Ax=b using the Backus-Gilbert Method
     # The original BGM is laid out in Hansen et al. https://doi.org/10.1103/PhysRevD.99.094508
@@ -35,7 +35,7 @@ def BGM_solve_test(A, b, C, omegas, lam_input=-1, Nlam=100, spacing='log', delta
     if( dim1 != Ntau or dim2 != Ntau):
         print('ERROR: C needs to be a covariance matrix of dimension (Ntau, Ntau)')
     dw = omegas[1]-omegas[0]
-    x=zeros((Nomega,))
+    x=zeros((Nomega, ))
     R=dw*A@ones((Nomega,1)) #Row Sum
 
     # ------------------------------- #
@@ -70,7 +70,7 @@ def BGM_solve_test(A, b, C, omegas, lam_input=-1, Nlam=100, spacing='log', delta
                 # numerical recipes approach
                 y = solve( (1-lams[j])*W + lams[j]*C, R)
                 q = y / (R.T @ y )[0,0]; # eqn 22
-                val = (1.-lams[j])*sum( (omegas - omegas[i])**2 * (q.T @ A)**2) + lams[j]*q.T @ C @ q
+                val = (1.-lams[j])*dw*sum( (omegas - omegas[i])**2 * (q.T @ A)**2) + lams[j]*q.T @ C @ q
                 objfxn.append(val[0,0])
             obj_list.append(objfxn) #  store objfxn list
 
@@ -94,4 +94,4 @@ def BGM_solve_test(A, b, C, omegas, lam_input=-1, Nlam=100, spacing='log', delta
             print('Something is going wrong, q.T @ R != 1')
         q_list.append(q)
         x[i]=(dw*b.T @ q)[0,0];
-    return x, q_list, obj_list
+    return reshape(x, (Nomega,1)), q_list, obj_list

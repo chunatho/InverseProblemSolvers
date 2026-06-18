@@ -42,7 +42,7 @@ def CG_solve( A, b, C, tol=1e-8, cond_upperbound = -1):
         A = copy(U[:,0:rank:1] @ diag(S[0:rank:1]) @ V[:,0:rank:1].T)
 
     #Pre-compute matrices for computational savings
-    Cinv = inv(C)
+    Cinv = inv(C)/len(b) # compute the reduced chi-sq
     tmp0 = A.T @ Cinv @ A
     tmp1 = A.T @ Cinv @ b
 

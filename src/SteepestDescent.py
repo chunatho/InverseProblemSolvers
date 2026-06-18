@@ -33,11 +33,11 @@ def SD_solve( A, b, C, cond_upperbound=-1, tol=1e-6, max_iter=100000, proj_flag=
     b = reshape( b,(-1,1) )
     [dim1, dim2] = shape(b) # Ntau rows and 1 cols
     if( dim1 != Ntau or dim2 != 1):
-        print("ERROR: b needs to be a vector of dimension (Ntau,1)")    
+        print("ERROR: b needs to be a vector of dimension (Ntau,1)")
     [dim1, dim2] = shape(C) # Ntau rows and Ntau cols
     if( dim1 != Ntau or dim2 != Ntau):
         print("ERROR: C needs to be a covariance matrix of dimension (Ntau, Ntau)")
-        
+
     # pre-condition the inversion to a set condition number #
     if(cond_upperbound > 0):
         print("Pre-conditioning matrix to cond(A)=", cond_upperbound)
@@ -48,9 +48,9 @@ def SD_solve( A, b, C, cond_upperbound=-1, tol=1e-6, max_iter=100000, proj_flag=
         A = U[:,0:rank] @ diag(S[0:rank]) @ V[:,0:rank].T 
 
     # precompute quantities for computational speed
-    Cinv = inv(C)
+    Cinv = inv(C) / len(b) # compute the reduced chi-sq
     tmp0 = A.T @ Cinv @ A
-    tmp1 = A.T @ Cinv @ b 
+    tmp1 = A.T @ Cinv @ b
 
     # initialize solution and residual vector
     x = ones((Nomega,1))
@@ -59,12 +59,12 @@ def SD_solve( A, b, C, cond_upperbound=-1, tol=1e-6, max_iter=100000, proj_flag=
     i=0
     while( i < max_iter and norm(r)**2 > tol ):
         z = (r.T@r) / (r.T@tmp0@r) # this produces a 1x1 matrix
-        x -= z*r 
-        r = tmp0 @ x - tmp1 
+        x -= z*r
+        r = tmp0 @ x - tmp1
         err_list.append(norm(r))
         i+=1
         # positivity projection step
-        if (proj_flag): 
+        if (proj_flag):
             for j, val in enumerate(x):
                 if(val < 0.0):
                     x[j] = 1e-8
@@ -73,6 +73,6 @@ def SD_solve( A, b, C, cond_upperbound=-1, tol=1e-6, max_iter=100000, proj_flag=
     if ( chi_sq < tol):
         print("SD converged iteration: ",i,  chi_sq )
     else:
-        print("SD failed to converge, ended with ||Ax-b||^@_C=", chi_sq )
-        
+        print("SD failed to converge, ended with ||Ax-b||^2_C=", chi_sq )
+
     return x, err_list
